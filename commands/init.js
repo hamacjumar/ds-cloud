@@ -1,11 +1,3 @@
-/**
- * 
- * 
- * 
- * TODOs
- * - add an option to create a node js server app
- */
-
 const {input, select} = require('@inquirer/prompts')
 const chalk = require("chalk")
 const saveConfig = require("../helpers/save-config")
@@ -19,7 +11,6 @@ let config = {}
 
 let appName = ""
 let appType = ""
-let appPath = ""
 
 async function init() {
     let url, data, spinner
