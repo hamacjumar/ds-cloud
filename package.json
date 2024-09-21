@@ -1,0 +1,27 @@
+{
+  "name": "ds-cloud",
+  "version": "1.0.0",
+  "description": "CLI for DroidScript Cloud",
+  "main": "index.js",
+  "bin": {
+    "cloud": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "droidscript",
+    "cloud",
+    "dscloud"
+  ],
+  "author": "J.Hamac",
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^6.0.1",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.6.7",
+    "ora": "^5.4.1"
+  }
+}
