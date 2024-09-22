@@ -6,8 +6,9 @@ const deploy = require("./commands/deploy")
 const reset = require("./commands/reset")
 const removeApp = require('./commands/delete')
 const createApp = require('./commands/create')
+const showKey = require("./commands/showKey")
 
-const VERSION = "0.1.0"
+const VERSION = "0.1.1"
 
 // version
 program
@@ -47,6 +48,12 @@ program
     .argument('<app-name>', 'The nodejs server app name')
     .description('Create an app in DroidScript cloud')
     .action( createApp )
+
+// create
+program
+    .command('key')
+    .description('Display cloud key')
+    .action( showKey )
 
 // Parse the arguments
 program.parse( process.argv )

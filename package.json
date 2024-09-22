@@ -1,5 +1,5 @@
 {
-  "name": "ds-cloud",
+  "name": "dscloud-cli",
   "version": "1.0.0",
   "description": "CLI for DroidScript Cloud",
   "main": "index.js",
