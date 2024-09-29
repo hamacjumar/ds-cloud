@@ -8,7 +8,7 @@ const removeApp = require('./commands/delete')
 const createApp = require('./commands/create')
 const showKey = require("./commands/showKey")
 
-const VERSION = "1.0.1"
+const VERSION = "1.0.2"
 
 // version
 program

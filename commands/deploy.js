@@ -8,12 +8,12 @@ const FormData = require('form-data')
 const fs = require("fs")
 const fetch = require('node-fetch')
 const ora = require('ora')
-
-let url, cfg, requests = []
+const AdmZip = require("adm-zip");
 
 async function deploy() {
 
-    var info = getAppInfo(), targetFolder, rmUrl, res, spinner
+    let info = getAppInfo(), targetFolder, appsFolder, actionUrl, res, spinner
+    let formData, url, cfg
     
     cfg = getConfig()
 
@@ -30,13 +30,16 @@ async function deploy() {
     }
 
     targetFolder = vars.cloudHome + "/apps/" + info.app
+    appsFolder = vars.cloudHome + "/apps"
 
     if(info.type == "website") {
         targetFolder = vars.cloudHome + "/public"
+        appsFolder = vars.cloudHome
+        info.app = "public"
     }
 
     url = utils.getUrl(cfg.cloudKey, "upload")
-    rmUrl = utils.getUrl(cfg.cloudKey, "action")
+    actionUrl = utils.getUrl(cfg.cloudKey, "action")
 
     // try to remove the app
     spinner = ora({
@@ -49,7 +52,7 @@ async function deploy() {
             type: "rm",
             file: targetFolder
         }
-        res = await utils.postRequest(rmUrl, opt, cfg.cloudKey)
+        res = await utils.postRequest(actionUrl, opt, cfg.cloudKey)
         
         if(!res.status && !res.message.includes("ENOENT: no such file or directory")) {
             spinner.fail("Unable to clear online files. Make sure you have internet connection and try again!")
@@ -62,14 +65,12 @@ async function deploy() {
         spinner.fail("Unable to clear online files. Make sure you have internet connection and try again!")
     }
 
-    requests = []
-
     spinner = ora({
         text: "Preparing files for upload...",
         color: "green"
     }).start()
 
-    uploadDir(process.cwd(), targetFolder)
+    formData = uploadDir(info, appsFolder)
 
     spinner.succeed("Files are ready")
 
@@ -79,7 +80,26 @@ async function deploy() {
     }).start()
 
     try {
-        res = await Promise.all(requests)
+        res = await fetch(url, {
+            method: "POST",
+            body: formData,
+            headers: {
+                ...formData.getHeaders(),
+                "Cookie": "key="+utils.getCloudKey(cfg.cloudKey)
+            }
+        })
+
+        opt = {
+            type: "unzip",
+            file: appsFolder+"/"+info.app+".zip"
+        }
+        res = await utils.postRequest(actionUrl, opt, cfg.cloudKey)
+
+        opt = {
+            type: "rm",
+            file: appsFolder+"/"+info.app+".zip"
+        }
+        res = await utils.postRequest(actionUrl, opt, cfg.cloudKey)
 
         spinner.succeed("Uploaded successfully")
 
@@ -89,6 +109,7 @@ async function deploy() {
         else {
             console.log( chalk.green(`Your website is now ready. Visit '${chalk.bold(utils.getSiteUrl(cfg.cloudKey))}'`) )
         }
+        fs.rmSync(process.cwd() +"/"+ info.app + ".zip")
     }
     catch( err ) {
         // 
@@ -97,37 +118,21 @@ async function deploy() {
     return
 }
 
-function uploadDir(folderPath, targetFolder) {
+function uploadDir(info, targetFolder) {
+
+    var filePath = process.cwd() + "/" + info.app + ".zip"
+    if( fs.existsSync(filePath) ) {
+        fs.rmSync( filePath )
+    }
+    var zip = new AdmZip()
+    zip.addLocalFolder( process.cwd() )
+    zip.writeZip( filePath )
 
     let formData = new FormData()
     formData.append("cwd", targetFolder)
+    formData.append("file", fs.createReadStream(filePath))
 
-    let files = fs.readdirSync(folderPath), filePath, stats
-
-    for(let i=0; i<files.length; i++) {
-
-        filePath = path.join(folderPath, files[i])
-
-        stats = fs.lstatSync(filePath)
-
-        if( stats.isFile() ) {
-            formData.append("file", fs.createReadStream(filePath))
-        }
-        else {
-            uploadDir(filePath, targetFolder+"/"+files[i])
-        }
-    }
-
-    requests.push(
-        fetch(url, {
-            method: "POST",
-            body: formData,
-            headers: {
-                ...formData.getHeaders(),
-                "Cookie": "key="+utils.getCloudKey(cfg.cloudKey)
-            }
-        })
-    )
+    return formData
 }
 
 module.exports = deploy
